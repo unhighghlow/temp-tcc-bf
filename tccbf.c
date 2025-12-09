@@ -27,7 +27,8 @@ struct bf_info {
     int sec_count;
 };
 
-static void bf_add_runtime(TCCState * s1, struct bf_info *bf)
+/*
+static void bf_add_runtime(TCCState *s1, struct bf_info *bf)
 {
     const char *start_symbol;
     int bf_type = 0;
@@ -70,7 +71,7 @@ static void bf_add_runtime(TCCState * s1, struct bf_info *bf)
     bf->start_symbol = start_symbol;
 }
 
-static void bf_set_options(struct bf_info *bf)
+static void bf_set_options(TCCState * s1, struct bf_info *bf)
 {
     if (1 == bf->type) {
         bf->imagebase = 0x100;
@@ -102,10 +103,38 @@ struct section_info {
     DWORD data_size;
 };
 
-/* ------------------------------------------------------------- */
+// -------------------------------------------------------------
 static int bf_section_class(Section *s)
 {
-    printf("\nTCCBF:%s:%d: not implemented\n", __FILE__, __LINE__);
+    int type, flags;
+    const char *name;
+
+    type = s->sh_type;
+    flags = s->sh_flags;
+    name = s->name;
+    if (flags & SHF_ALLOC) {
+        if (type == SHT_PROGBITS) {
+            if (flags & SHF_EXECINSTR)
+                return sec_text;
+            if (flags & SHF_WRITE)
+                return sec_data;
+            if (0 == strcmp(name, ".rsrc"))
+                return sec_rsrc;
+            if (0 == strcmp(name, ".iedat"))
+                return sec_idata;
+            if (0 == strcmp(name, ".pdata"))
+                return sec_pdata;
+            return sec_other;
+        } else if (type == SHT_NOBITS) {
+            if (flags & SHF_WRITE)
+                return sec_bss;
+        }
+    } else {
+        if (0 == strcmp(name, ".reloc"))
+            return sec_reloc;
+        if (0 == strncmp(name, ".stab", 5)) // .stab and .stabstr
+            return sec_stab;
+    }
     return -1;
 }
 
@@ -116,7 +145,7 @@ static DWORD bf_virtual_align(struct bf_info *bf, DWORD n)
 
 static void bf_print_section(FILE * f, Section * s)
 {
-    /* just if you're curious */
+    // just if you're curious
     BYTE *p, *e, b;
     int i, n, l, m;
     p = s->data;
@@ -310,11 +339,9 @@ static int bf_assign_addresses (struct bf_info *bf)
 }
 
 
-/*----------------------------------------------------------------------------*/
+//-----------------------------------------------------------------------------
 static int bf_check_symbols(struct bf_info *bf)
 {
-    TCCState *s1 = bf->s1;
-
     ElfW(Sym) *sym;
     int sym_index, sym_end;
     int ret = 0;
@@ -331,12 +358,12 @@ static int bf_check_symbols(struct bf_info *bf)
 
         if (sym->st_shndx == SHN_UNDEF) {
 
-            int imp_sym = bf_find_import(bf->s1, sym);
+            int imp_sym = pe_find_import(bf->s1, sym);
 
             if (imp_sym <= 0)
             {
                 if (ELFW(ST_BIND)(sym->st_info) == STB_WEAK)
-                    /* STB_WEAK undefined symbols are accepted */
+                    // STB_WEAK undefined symbols are accepted
                     continue;
                 tcc_error_noabort("undefined symbol '%s'%s", name,
                     imp_sym < 0 ? ", missing __declspec(dllimport)?":"");
@@ -402,11 +429,9 @@ static int bf_emit_code(FILE *op, const char *p_comment, char *p_format, ...)
     return 0;
 }
 
-/*----------------------------------------------------------------------------*/
+//----------------------------------------------------------------------------
 static int bf_write(struct bf_info *bf)
 {
-    TCCState *s1 = bf->s1;
-
     int i;
     FILE *op;
     DWORD file_offset = 0;
@@ -512,5 +537,4 @@ ST_FUNC SValue *bf_getimport(SValue *sv, SValue *v2)
     printf("\nTCCBF:%s:%d: not implemented\n", __FILE__, __LINE__);
     return NULL;
 }
-
-
+*/

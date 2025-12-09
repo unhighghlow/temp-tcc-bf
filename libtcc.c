@@ -66,7 +66,7 @@
 #include "tccmacho.c"
 #endif
 #ifdef TCC_TARGET_BF
-#include "tccbf.c"
+//#include "tccbf.c"
 #endif
 #endif /* ONE_SOURCE */
 
@@ -888,7 +888,7 @@ LIBTCCAPI TCCState *tcc_new(void)
 #ifdef CHAR_IS_UNSIGNED
     s->char_is_unsigned = 1;
 #endif
-#if defined(TCC_TARGET_I386) || defined(TCC_TARGET_BF)
+#ifdef TCC_TARGET_I386
     s->seg_size = 32;
 #endif
     /* enable this if you want symbols with leading underscore on windows: */
@@ -1446,7 +1446,7 @@ static int tcc_set_linker(TCCState *s, const char *optarg)
                 s->output_format = TCC_OUTPUT_FORMAT_COFF;
 #endif
 #ifdef TCC_TARGET_BF
-            else if (!strcmp(p, "bf")) {
+            else if (0==strcmp("bf", o.arg))
                 s->output_format = TCC_OUTPUT_FORMAT_BF;
 #endif
             else
@@ -1471,7 +1471,7 @@ static int tcc_set_linker(TCCState *s, const char *optarg)
         } else if (link_option(&o, "znodelete")) {
             s->znodelete = 1;
 #ifdef TCC_TARGET_BF
-        } else if (link_option(option, "preload", &p)) {
+        } else if (link_option(&o, "bf")) {
             s->bf_flags |= 0x1;
 #endif
 #ifdef TCC_TARGET_PE
@@ -1584,7 +1584,7 @@ enum {
     TCC_OPTION_compatibility_version ,
     TCC_OPTION_current_version,
     /* bf */
-    TCC_OPTION_bf
+    TCC_OPTION_bf,
 };
 
 #define TCC_OPTION_HAS_ARG 0x0001
