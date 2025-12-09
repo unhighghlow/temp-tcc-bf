@@ -3100,6 +3100,8 @@ LIBTCCAPI int tcc_output_file(TCCState *s, const char *filename)
     return  pe_output_file(s, filename);
 #elif defined TCC_TARGET_MACHO
     return macho_output_file(s, filename);
+#elif defined TCC_TARGET_BF
+    return bf_output_file(s, filename);
 #else
     return elf_output_file(s, filename);
 #endif

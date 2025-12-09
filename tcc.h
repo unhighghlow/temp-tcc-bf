@@ -143,6 +143,7 @@ extern long double strtold (const char *__nptr, char **__endptr);
 /* #define ASM_DEBUG */
 
 /* target selection */
+/* #define TCC_TARGET_BF     *//* Brainfuck code generator */
 /* #define TCC_TARGET_I386   *//* i386 code generator */
 /* #define TCC_TARGET_X86_64 *//* x86-64 code generator */
 /* #define TCC_TARGET_ARM    *//* ARMv4 code generator */
@@ -151,7 +152,8 @@ extern long double strtold (const char *__nptr, char **__endptr);
 /* #define TCC_TARGET_RISCV64 *//* risc-v code generator */
 
 /* default target is I386 */
-#if !defined(TCC_TARGET_I386) && !defined(TCC_TARGET_ARM) && \
+#if !defined(TCC_TARGET_BF) && \
+    !defined(TCC_TARGET_I386) && !defined(TCC_TARGET_ARM) && \
     !defined(TCC_TARGET_ARM64) && !defined(TCC_TARGET_C67) && \
     !defined(TCC_TARGET_X86_64) && !defined(TCC_TARGET_RISCV64)
 # if defined __x86_64__
@@ -372,6 +374,10 @@ extern long double strtold (const char *__nptr, char **__endptr);
 /* include the target specific definitions */
 
 #define TARGET_DEFS_ONLY
+#ifdef TCC_TARGET_I386
+# include "bf-gen.c"
+# include "bf-link.c"
+#endif
 #ifdef TCC_TARGET_I386
 # include "i386-gen.c"
 # include "i386-link.c"
@@ -942,6 +948,10 @@ struct TCCState {
     #define last_hi s1->last_hi
 #endif
 
+#ifdef TCC_TARGET_BF
+    /* BF info */
+    unsigned bf_flags;
+#endif
 #ifdef TCC_TARGET_PE
     /* PE info */
     int pe_subsystem;
@@ -1525,6 +1535,7 @@ ST_FUNC Sym *gfunc_set_param(Sym *s, int c, int byref);
 #define TCC_OUTPUT_FORMAT_BINARY 1 /* binary image output */
 #define TCC_OUTPUT_FORMAT_COFF   2 /* COFF */
 #define TCC_OUTPUT_DYN           TCC_OUTPUT_DLL
+#define TCC_OUTPUT_FORMAT_BF     3 /* Brinfuck script ouytput */
 
 #define ARMAG  "!<arch>\n"    /* For COFF and a.out archives */
 
@@ -1752,6 +1763,16 @@ ST_FUNC void asm_compute_constraints(ASMOperand *operands, int nb_operands, int 
 ST_FUNC void subst_asm_operand(CString *add_str, SValue *sv, int modifier);
 ST_FUNC void asm_gen_code(ASMOperand *operands, int nb_operands, int nb_outputs, int is_output, uint8_t *clobber_regs, int out_reg);
 ST_FUNC void asm_clobber(uint8_t *clobber_regs, const char *str);
+#endif
+
+/* ------------ tccbf.c -------------- */
+#ifdef TCC_TARGET_BF
+ST_FUNC int bf_load_file(struct TCCState *s1, const char *filename, int fd);
+ST_FUNC int bf_output_file(TCCState * s1, const char *filename);
+ST_FUNC int bf_putimport(TCCState *s1, int dllindex, const char *name, addr_t value);
+ST_FUNC SValue *bf_getimport(SValue *sv, SValue *v2);
+/* symbol properties stored in Elf32_Sym->st_other */
+# define ST_BF_STDCALL 0x80
 #endif
 
 /* ------------ tccpe.c -------------- */

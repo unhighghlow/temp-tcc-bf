@@ -141,6 +141,9 @@ static const char help2[] =
     "  -export-dynamic               same as -rdynamic\n"
     "  -image-base= -Ttext=          set base address of executable\n"
     "  -section-alignment=           set section alignment in executable\n"
+#ifdef TCC_TARGET_BF
+    "  -preload=                     preload data to tape\n"
+#endif
 #ifdef TCC_TARGET_PE
     "  -file-alignment=              set PE file alignment\n"
     "  -stack=                       set PE stack reserve\n"
@@ -191,6 +194,9 @@ static const char version[] =
         "AArch64"
 #elif defined TCC_TARGET_RISCV64
         "riscv64"
+#endif
+#ifdef TCC_TARGET_BF
+        " Brainfuck"
 #endif
 #ifdef TCC_TARGET_PE
         " Windows"
@@ -265,6 +271,11 @@ static char *default_outputfile(TCCState *s, const char *first_file)
     else
     if (s->output_type == TCC_OUTPUT_EXE)
         strcpy(ext, ".exe");
+    else
+#endif
+#ifdef TCC_TARGET_BF
+    if (s->output_type == TCC_OUTPUT_BF)
+        strcpy(ext, ".b");
     else
 #endif
     if ((s->just_deps || s->output_type == TCC_OUTPUT_OBJ) && !s->option_r && *ext)

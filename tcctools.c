@@ -557,6 +557,9 @@ ST_FUNC int tcc_tool_cross(char **argv, int target)
 #ifdef TCC_TARGET_PE
         "-win32"
 #endif
+#ifdef TCC_TARGET_BF
+        "-bf"
+#endif
         "-tcc"
 #ifdef _WIN32
         ".exe"

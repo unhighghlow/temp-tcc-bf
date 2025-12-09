@@ -33,6 +33,9 @@
 #include "i386-gen.c"
 #include "i386-link.c"
 #include "i386-asm.c"
+#elif defined(TCC_TARGET_BF)
+#include "bf-gen.c"
+#include "bf-link.c"
 #elif defined(TCC_TARGET_ARM)
 #include "arm-gen.c"
 #include "arm-link.c"
@@ -61,6 +64,9 @@
 #endif
 #ifdef TCC_TARGET_MACHO
 #include "tccmacho.c"
+#endif
+#ifdef TCC_TARGET_BF
+#include "tccbf.c"
 #endif
 #endif /* ONE_SOURCE */
 
@@ -882,7 +888,7 @@ LIBTCCAPI TCCState *tcc_new(void)
 #ifdef CHAR_IS_UNSIGNED
     s->char_is_unsigned = 1;
 #endif
-#ifdef TCC_TARGET_I386
+#if defined(TCC_TARGET_I386) || defined(TCC_TARGET_BF)
     s->seg_size = 32;
 #endif
     /* enable this if you want symbols with leading underscore on windows: */
@@ -1291,6 +1297,8 @@ LIBTCCAPI int tcc_add_library(TCCState *s, const char *libraryname)
         "%s/%s.def", "%s/lib%s.def", "%s/%s.dll", "%s/lib%s.dll",
 #elif defined TCC_TARGET_MACHO
         "%s/lib%s.dylib", "%s/lib%s.tbd",
+#elif defined TCC_TARGET_BF
+	"%s/%s.b", 
 #elif defined TARGETOS_OpenBSD
         "%s/lib%s.so.*",
 #else
@@ -1437,6 +1445,10 @@ static int tcc_set_linker(TCCState *s, const char *optarg)
             else if (0==strcmp("coff", o.arg))
                 s->output_format = TCC_OUTPUT_FORMAT_COFF;
 #endif
+#ifdef TCC_TARGET_BF
+            else if (!strcmp(p, "bf")) {
+                s->output_format = TCC_OUTPUT_FORMAT_BF;
+#endif
             else
                 goto err;
         } else if (link_option(&o, "export-all-symbols")
@@ -1458,6 +1470,10 @@ static int tcc_set_linker(TCCState *s, const char *optarg)
             s->filetype &= ~AFF_WHOLE_ARCHIVE;
         } else if (link_option(&o, "znodelete")) {
             s->znodelete = 1;
+#ifdef TCC_TARGET_BF
+        } else if (link_option(option, "preload", &p)) {
+            s->bf_flags |= 0x1;
+#endif
 #ifdef TCC_TARGET_PE
         } else if (link_option(&o, "large-address-aware")) {
             s->pe_characteristics |= 0x20;
@@ -1567,6 +1583,8 @@ enum {
     TCC_OPTION_install_name,
     TCC_OPTION_compatibility_version ,
     TCC_OPTION_current_version,
+    /* bf */
+    TCC_OPTION_bf
 };
 
 #define TCC_OPTION_HAS_ARG 0x0001
@@ -1677,6 +1695,9 @@ static const TCCOption tcc_options[] = {
     { "pipe", 0, 0 },
     { "s", 0, 0 },
     { "traditional", 0, 0 },
+#ifdef TCC_TARGET_BF
+    { "bf", TCC_OPTION_bf, 0},
+#endif
     { NULL, 0, 0 },
 };
 
@@ -1769,12 +1790,16 @@ static const char dumpmachine_str[] =
     "aarch64"
 #elif defined TCC_TARGET_RISCV64
     "riscv64"
+#elif defined TCC_TARGET_BF
+    "bf"
 #endif
     "-"
 #ifdef TCC_TARGET_PE
     "mingw32"
 #elif defined(TCC_TARGET_MACHO)
     "apple-darwin"
+#elif defined(TCC_TARGET_BF)
+    "bf"
 #elif TARGETOS_FreeBSD || TARGETOS_FreeBSD_kernel
     "freebsd"
 #elif TARGETOS_OpenBSD
@@ -2008,6 +2033,11 @@ PUB_FUNC int tcc_parse_args(TCCState *s, int *pargc, char ***pargv)
         case TCC_OPTION_shared:
             x = TCC_OUTPUT_DLL;
             goto set_output_type;
+#ifdef TCC_OUTPUT_BF
+        case TCC_OPTION_bf:
+            x = TCC_OUTPUT_BF;
+            goto set_output_type;
+#endif
         case TCC_OPTION_soname:
             tcc_set_str(&s->soname, optarg);
             break;
