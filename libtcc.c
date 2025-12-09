@@ -66,7 +66,7 @@
 #include "tccmacho.c"
 #endif
 #ifdef TCC_TARGET_BF
-//#include "tccbf.c"
+#include "tccbf.c"
 #endif
 #endif /* ONE_SOURCE */
 

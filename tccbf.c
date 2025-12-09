@@ -27,7 +27,6 @@ struct bf_info {
     int sec_count;
 };
 
-/*
 static void bf_add_runtime(TCCState *s1, struct bf_info *bf)
 {
     const char *start_symbol;
@@ -342,6 +341,8 @@ static int bf_assign_addresses (struct bf_info *bf)
 //-----------------------------------------------------------------------------
 static int bf_check_symbols(struct bf_info *bf)
 {
+    TCCState * s1 = bf->s1;
+
     ElfW(Sym) *sym;
     int sym_index, sym_end;
     int ret = 0;
@@ -358,7 +359,7 @@ static int bf_check_symbols(struct bf_info *bf)
 
         if (sym->st_shndx == SHN_UNDEF) {
 
-            int imp_sym = pe_find_import(bf->s1, sym);
+            int imp_sym = find_elf_sym(bf->s1, sym);
 
             if (imp_sym <= 0)
             {
@@ -432,6 +433,8 @@ static int bf_emit_code(FILE *op, const char *p_comment, char *p_format, ...)
 //----------------------------------------------------------------------------
 static int bf_write(struct bf_info *bf)
 {
+    TCCState * s1 = bf->s1;
+
     int i;
     FILE *op;
     DWORD file_offset = 0;
@@ -506,15 +509,9 @@ ST_FUNC int bf_output_file(TCCState * s1, const char *filename)
     else if (filename) {
         bf_assign_addresses(&bf);
         relocate_syms(s1, s1->symtab, 0);
-        for (i = 1; i < s1->nb_sections; ++i) {
-            Section *s = s1->sections[i];
-            if (s->reloc) {
-                relocate_section(s1, s);
-            }
-        }
+        relocate_sections(s1);
         bf.start_addr = (DWORD)
-            ((uintptr_t)tcc_get_symbol_err(s1, bf.start_symbol)
-                - bf.imagebase);
+            (get_sym_addr(s1, bf.start_symbol, 1, 1) - bf.imagebase);
         //if (s1->nb_errors)
         //    ret = -1;
         //else
@@ -537,4 +534,3 @@ ST_FUNC SValue *bf_getimport(SValue *sv, SValue *v2)
     printf("\nTCCBF:%s:%d: not implemented\n", __FILE__, __LINE__);
     return NULL;
 }
-*/
